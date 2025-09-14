@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: health-api-prod
+  namespace: argocd
+spec:
+  sourceRepos:
+    - https://gitlab.com/vikgur/gitops-apps-health-api
+    - https://gitlab.com/vikgur/helm-blue-green-canary-gitops-health-api
+  destinations:
+    - namespace: health-api
+      server: https://kubernetes.default.svc
+  syncWindows:
+    - kind: allow
+      schedule: "Mon-Fri 09:00-18:00"
+      duration: 9h
+      applications:
+        - '*'
+  orphanedResources:
+    warn: true

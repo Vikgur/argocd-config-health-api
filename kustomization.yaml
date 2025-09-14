@@ -1,0 +1,7 @@
+resources:
+  - argocd/cm/argocd-cm.yaml
+  - argocd/cm/argocd-rbac-cm.yaml
+  - argocd/projects/project-stage.yaml
+  - argocd/projects/project-prod.yaml
+  - argocd/repos/repo-gitops-apps.yaml
+  - argocd/repos/repo-helm-charts.yaml

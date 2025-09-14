@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  application.instanceLabelKey: app.kubernetes.io/instance
+  resource.customizations.health.argoproj.io/Rollout: |
+    hs = {}
+    hs.status = "Healthy"
+    hs.message = rollout.status
+    return hs
+  timeout.reconciliation: 180s
+  timeout.hard.reconciliation: 300s

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    g:devops    role:admin
+    g:qa        role:stage-admin
+  roles: |
+    p, role:admin, *, *, *, allow
+    p, role:stage-admin, applications, *, health-api-stage/*, allow
+    p, role:stage-admin, projects, get, *, allow
+    p, role:stage-admin, repositories, get, *, allow

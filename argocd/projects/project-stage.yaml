@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: health-api-stage
+  namespace: argocd
+spec:
+  sourceRepos:
+    - https://gitlab.com/vikgur/gitops-apps-health-api
+    - https://gitlab.com/vikgur/helm-blue-green-canary-gitops-health-api
+  destinations:
+    - namespace: health-api-stage
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  orphanedResources:
+    warn: true

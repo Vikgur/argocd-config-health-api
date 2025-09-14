@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.32.0
+    hooks:
+      - id: yamllint
+        name: YAML Lint
+        files: \.(yaml|yml)$
+
+  - repo: https://github.com/helm/chart-testing
+    rev: v3.9.0
+    hooks:
+      - id: ct-lint
+        name: Kubernetes Manifest Lint
+        entry: ct lint --check-version-increment=false
+        language: system
+        types: [yaml]
+        pass_filenames: false
