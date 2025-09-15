@@ -20,18 +20,21 @@
 
 ## О проекте
 
-Данный репозиторий — это **ядро GitOps-конфигурации Argo CD** для веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack).  
-Он формирует фундамент управления платформой: **AppProjects**, **SSO/локальная авторизация**, **RBAC-политики**, подключение **Git-репозиториев**, параметры контроллера и кастомные health checks.  
+## О проекте
 
-Встроена система **уведомлений через Telegram** для полного цикла обратной связи: успешные деплои (**on-deployed**) и реакция на деградацию состояния (**on-health-degraded**).  
+Этот репозиторий — **ядро GitOps-конфигурации Argo CD** для веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack). Он формирует основу управления платформой: определяет **AppProjects**, настраивает **SSO/локальную авторизацию**, задаёт **RBAC-политику**, подключает необходимые **Git-репозитории**, описывает параметры контроллера и кастомные health checks. Дополнительно встроена система **уведомлений в Telegram**, обеспечивающая полный цикл обратной связи — от сообщений об успешных выкладках (**on-deployed**) до реакции на деградацию состояния (**on-health-degraded**).  
 
-Важно: **Argo CD не управляет этим репозиторием — именно этот репозиторий управляет Argo CD**, определяя его конфигурацию и поведение.  
+Ключевой принцип архитектуры состоит в том, что **Argo CD не управляет этим репозиторием — именно этот репозиторий управляет Argo CD**, определяя его конфигурацию, безопасность и поведение. Применение настроек выполняется декларативно через **Kustomize** (`kustomize build` + `kubectl apply`), встроенное в инфраструктурный пайплайн Ansible: [`ansible-gitops-bootstrap-health-api`](https://github.com/vikgur/ansible-gitops-bootstrap-health-api).  
 
-Применение конфигурации реализовано декларативно, через **Kustomize** (`kustomize build` + `kubectl apply`), встроенное в инфраструктурный пайплайн на базе Ansible: [`ansible-gitops-bootstrap-health-api`](https://github.com/vikgur/ansible-gitops-bootstrap-health-api).
+Через объект **[`apps/platform-apps.yaml`](apps/platform-apps.yaml)** репозиторий дополнительно подключает инфраструктурный стек [`gitops-argocd-platform-health-api`](https://github.com/vikgur/gitops-argocd-platform-health-api) по паттерну *App of Apps*. Благодаря этому системные компоненты (ingress-nginx, cert-manager, external-secrets и др.) разворачиваются и поддерживаются Argo CD автоматически, без прямого участия Ansible.
 
 ---
 
 # Архитектура и настройки
+
+* **Подключение системных приложений** (`apps/platform-apps.yaml`)  
+  * Реализует связь с репозиторием [`gitops-argocd-platform-health-api`](https://github.com/vikgur/gitops-argocd-platform-health-api), где описаны все инфраструктурные компоненты (ingress-nginx, cert-manager, external-secrets, monitoring и др.).  
+  * Таким образом обеспечивается разделение: конфигурация Argo CD хранится здесь, а установка платформы — в отдельном репозитории.  
 
 * **AppProjects** (`argocd/projects/`)
 

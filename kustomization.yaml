@@ -1,4 +1,5 @@
 resources:
+  - apps/platform-apps.yaml
   - argocd/cm/argocd-cm-oidc.yaml
   # - argocd/cm/argocd-cm-dex.yaml если используется DEX
   - argocd/cm/argocd-rbac-cm.yaml
