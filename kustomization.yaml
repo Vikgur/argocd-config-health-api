@@ -5,3 +5,4 @@ resources:
   - argocd/projects/project-prod.yaml
   - argocd/repos/repo-gitops-apps.yaml
   - argocd/repos/repo-helm-charts.yaml
+  - ingress/argocd.ingress.yaml

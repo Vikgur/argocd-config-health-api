@@ -12,3 +12,12 @@ data:
     return hs
   timeout.reconciliation: 180s
   timeout.hard.reconciliation: 300s
+
+  url: https://argocd.health.gurko.ru
+
+  oidc.config: |
+    name: GitHub
+    issuer: https://github.com
+    clientID: YOUR_CLIENT_ID
+    clientSecret: YOUR_CLIENT_SECRET
+    requestedScopes: ["openid", "user", "email", "groups"]

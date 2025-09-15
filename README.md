@@ -4,15 +4,20 @@
 - [Архитектура и настройки](#архитектура-и-настройки)  
 - [Как применять и управлять](#как-применять-и-управлять)  
 - [Внедренные DevSecOps практики](#внедренные-devsecops-практики)  
+  - [AppProjects: изоляция окружений и контроль доступа](#appprojects-изоляция-окружений-и-контроль-доступа)  
+  - [SSO: Назначение, подготовка, реализация](#sso-назначение-подготовка-реализация)  
+    - [Назначение](#назначение)  
+    - [Шаги настройки (GitHub)](#шаги-настройки-github)  
+    - [Поддержка двух способов авторизации](#поддержка-двух-способов-авторизации)  
   - [RBAC: разграничение доступа](#rbac-разграничение-доступа)  
-  - [AppProjects: изоляция окружений и контроль доступа](#appprojects-изоляция-окружений-и-контроль-доступа)
-  - [Linting и валидация](#linting-и-валидация)
+    - [Важное условие](#важное-условие)  
+- [Linting и валидация](#linting-и-валидация)
 
 ---
 
 # О проекте
 
-Данный репозиторий представляет собой ядро GitOps-конфигурации для Argo CD веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack): он определяет все критически важные элементы управления — **RBAC-политику**, **AppProjects**, подключение **Git-репозиториев**, а также параметры контроллера и кастомные health checks.
+Данный репозиторий представляет собой ядро GitOps-конфигурации для Argo CD веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack): он определяет все критически важные элементы управления — **AppProjects**,**Авторизацию (SSO или по обычному логину)**, **RBAC-политику**,  подключение **Git-репозиториев**, а также параметры контроллера и кастомные health checks.
 
 Сам Argo CD не управляет этим репозиторием — напротив, **этот репозиторий управляет Argo CD**.  
 
@@ -68,6 +73,69 @@ kustomize build . | kubectl apply -f -
 
 Репозиторий реализует безопасную декларативную конфигурацию доступа в Argo CD:
 
+## AppProjects: изоляция окружений и контроль доступа
+
+Ограничения описаны в файлах `argocd/projects/`:
+
+- жёсткая привязка к namespace и Git-репозиториям для каждого окружения (`stage`, `prod`)
+- включены предупреждения об осиротевших ресурсах (`orphanedResources.warn`)
+- для окружения `prod` задано sync-окно — деплой возможен только в рабочее время
+
+## SSO: Назначение, подготовка, реализация
+
+### Назначение
+
+**Цель:** безопасный централизованный вход в Argo CD через GitHub, без ручных логинов.
+
+- Пользователь входит через GitHub OAuth  
+- Argo CD получает `email`, `username`, `groups`  
+- Группы (`g:devops`, `g:qa`) управляют доступом через `argocd-rbac-cm.yaml`
+
+### Шаги настройки (GitHub)**
+
+1. **Зарегистрировать OAuth App в GitHub:**
+
+   - Перейди: `GitHub → Settings → Developer settings → OAuth Apps`
+   - Нажми **New OAuth App**:
+     - Application Name: `Argo CD SSO`
+     - Homepage URL: `https://argocd.health.gurko.ru`
+     - Authorization callback URL для OIDC:  
+       `https://argocd.health.gurko.ru/auth/callback`
+     - Authorization callback URL для DEX:  
+       `https://argocd.health.gurko.ru/api/dex/callback`
+
+2. **Скопировать:**
+   - `Client ID`
+   - `Client Secret`
+
+3. **Вставить в [ansible-gitops-bootstrap-health-api](https://github.com/Vikgur/ansible-gitops-bootstrap-health-api/) в [ansible/group_vars/master.yaml](https://github.com/Vikgur/ansible-gitops-bootstrap-health-api/-/blob/main/ansible/group_vars/master.yaml):**
+
+   ```yaml
+   github_oauth_client_id: YOUR_CLIENT_ID
+   github_oauth_client_secret: YOUR_CLIENT_SECRET
+   argocd_sso_mode: oidc # или dex
+   ```
+
+### Поддержка двух способов авторизации
+
+Репозиторий содержит два независимых подхода авторизации в Argo CD:
+
+- **OIDC напрямую через GitHub (выбран как основной)** — используется в продакшене, настраивается в `argocd-cm.yaml`, без дополнительных компонентов. В связанном репозитории [ansible-gitops-bootstrap-health-api](https://github.com/Vikgur/ansible-gitops-bootstrap-health-api/) в [ansible/group_vars/master.yaml](https://github.com/Vikgur/ansible-gitops-bootstrap-health-api/-/blob/main/ansible/group_vars/master.yaml) выбран `argocd_namespace: argocd`.
+- **Dex + GitHub OAuth** — дополнительный демонстрационный вариант для целей портфолио, расположен в `argocd-cm-dex.yaml`.
+
+Оба файла можно применить вручную через `kubectl apply`, в зависимости от требуемой конфигурации.
+
+Активный вариант указывается через файл `argocd/cm/argocd-cm-*.yaml`, остальные закомментированы в `kustomization.yaml`
+
+#### Почему выбран OIDC:
+
+- Упрощает архитектуру: меньше компонентов = меньше точек отказа.
+- Настраивается напрямую в `argocd-cm.yaml` через `oidc.config`.
+- Лучше подходит для облачных CI/CD систем (GitHub, github, Okta).
+- Используется в production-кластерах крупных компаний.
+
+Dex — более «архитектурный» способ, используется, если у компании несколько провайдеров (GitHub, github, LDAP и т.д.). Dex оставлен в проекте **для демонстрации альтернативного варианта**.
+
 ## RBAC: разграничение доступа
 
 Конфигурация `argocd/cm/argocd-rbac-cm.yaml` задаёт роли и права доступа в Argo CD:
@@ -82,13 +150,10 @@ kustomize build . | kubectl apply -f -
 
 Это разграничение позволяет ограничить доступ к `prod`, оставить `stage` для QA, и исключить случайные действия вне зоны ответственности. Все права описаны декларативно и управляются через GitOps.
 
-## AppProjects: изоляция окружений и контроль доступа
+### Важное условие
 
-Ограничения описаны в файлах `argocd/projects/`:
-
-- жёсткая привязка к namespace и Git-репозиториям для каждого окружения (`stage`, `prod`)
-- включены предупреждения об осиротевших ресурсах (`orphanedResources.warn`)
-- для окружения `prod` задано sync-окно — деплой возможен только в рабочее время
+g:devops, g:qa должны быть GitHub Teams при использовании orgs.
+Если вход по обычным пользователям — можно использовать login:<user> вместо g:…
 
 ## Linting и валидация
 
@@ -108,4 +173,3 @@ kustomize build . | kubectl apply -f -
 ```bash
 pre-commit run --all-files
 ```
-
