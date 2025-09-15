@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-triggers-cm
+  namespace: argocd
+data:
+  triggers: |
+    - name: on-deployed
+      condition: app.status.operationState.phase in ['Succeeded']
+      template: app-deployed
+    - name: on-health-degraded
+      condition: app.status.health.status == 'Degraded'
+      template: app-health-degraded

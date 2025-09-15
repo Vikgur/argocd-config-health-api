@@ -1,0 +1,13 @@
+# Kubernetes & Argo CD config
+*.bak
+*.tmp
+*.retry
+*.swp
+
+# Ansible artifacts
+*.tar
+*.log
+
+# OS/system files
+.DS_Store
+Thumbs.db

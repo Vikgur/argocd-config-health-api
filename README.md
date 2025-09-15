@@ -11,20 +11,23 @@
     - [Поддержка двух способов авторизации](#поддержка-двух-способов-авторизации)  
   - [RBAC: разграничение доступа](#rbac-разграничение-доступа)  
     - [Важное условие](#важное-условие)  
-- [Linting и валидация](#linting-и-валидация)
+  - [Настройка уведомлений в Telegram](#настройка-уведомлений-в-telegram)  
+    - [Логика уведомлений](#логика-уведомлений)  
+    - [Как получить token и chat_id](#как-получить-token-и-chat_id)
+  - [Linting и валидация](#linting-и-валидация)
 
 ---
 
-# О проекте
+## О проекте
 
-Данный репозиторий представляет собой ядро GitOps-конфигурации для Argo CD веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack): он определяет все критически важные элементы управления — **AppProjects**,**Авторизацию (SSO или по обычному логину)**, **RBAC-политику**,  подключение **Git-репозиториев**, а также параметры контроллера и кастомные health checks.
+Данный репозиторий — это **ядро GitOps-конфигурации Argo CD** для веб-приложения [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack).  
+Он формирует фундамент управления платформой: **AppProjects**, **SSO/локальная авторизация**, **RBAC-политики**, подключение **Git-репозиториев**, параметры контроллера и кастомные health checks.  
 
-Сам Argo CD не управляет этим репозиторием — напротив, **этот репозиторий управляет Argo CD**.  
+Встроена система **уведомлений через Telegram** для полного цикла обратной связи: успешные деплои (**on-deployed**) и реакция на деградацию состояния (**on-health-degraded**).  
 
-Конфигурация применяется декларативно через `kustomize build` и `kubectl apply`, в рамках инфраструктурного пайплайна на базе Ansible.
+Важно: **Argo CD не управляет этим репозиторием — именно этот репозиторий управляет Argo CD**, определяя его конфигурацию и поведение.  
 
-Применение и автоматизация настроены через Ansible-проект:  
-[`ansible-gitops-bootstrap-health-api`](https://github.com/vikgur/ansible-gitops-bootstrap-health-api)
+Применение конфигурации реализовано декларативно, через **Kustomize** (`kustomize build` + `kubectl apply`), встроенное в инфраструктурный пайплайн на базе Ansible: [`ansible-gitops-bootstrap-health-api`](https://github.com/vikgur/ansible-gitops-bootstrap-health-api).
 
 ---
 
@@ -154,6 +157,53 @@ Dex — более «архитектурный» способ, использу
 
 g:devops, g:qa должны быть GitHub Teams при использовании orgs.
 Если вход по обычным пользователям — можно использовать login:<user> вместо g:…
+
+## Настройка уведомлений в Telegram
+
+### Логика уведомлений
+
+В репозитории настроена система уведомлений через Telegram:
+
+- **on-deployed** — отправка уведомления при успешном деплое приложения
+- **on-health-degraded** — уведомление при ухудшении состояния (Degraded)
+
+Логика описана в `argocd/notifications/triggers.yaml`, шаблоны — в `argocd/notifications/templates.yaml`, а канал Telegram подключён через `argocd/notifications/cm.yaml` и `argocd/notifications/secret.yaml`.
+
+> Значения `telegram_token` и `telegram_chat_id` берутся из секрета `argocd/notifications/secret.yaml`.
+
+### Как получить token и chat_id
+
+**1. `TELEGRAM_TOKEN`**
+Токен Telegram-бота:
+
+* Через `@BotFather` создать бота: `/newbot`
+* Название: `argocd_notifications_bot`
+* Полученный токен будет вида `123456789:AAFx8Z...`
+
+**2. `TELEGRAM_CHAT_ID`**
+ID чата, куда отправлять уведомления:
+
+* Добавить бота в группу или написать ему сообщение
+
+* Выполнить:
+
+  ```bash
+  curl "https://api.telegram.org/bot<TELEGRAM_TOKEN>/getUpdates"
+  ```
+
+* В ответе найти:
+
+  ```json
+  "chat": {
+    "id": -123456789
+  }
+  ```
+
+* Это и есть `TELEGRAM_CHAT_ID`
+
+**3. `ПОДСТАВИТЬ ЗНАЧЕНИЯ`**
+
+Значения token и chat_id вставить в соответствующие поля в `argocd/notifications/secret.yaml`
 
 ## Linting и валидация
 

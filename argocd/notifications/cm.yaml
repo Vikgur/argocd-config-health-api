@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+labels:
+  app.kubernetes.io/part-of: argocd-notifications
+  app.kubernetes.io/component: controller
+  app.kubernetes.io/name: argocd-notifications-cm
+data:
+  service.telegram: |
+    token: $telegram_token
+    chatIDs:
+      - $telegram_chat_id
+
+  trigger.on-sync-status-unknown: |
+    - when: app.status.sync.status == 'Unknown'
+      send: [app-sync-status]
+
+  template.app-sync-status: |
+    message: |
+      Argo CD App `{{.app.metadata.name}}` has sync status: `{{.app.status.sync.status}}`
+      
+      {{if .app.status.operationState}}
+      Operation: `{{.app.status.operationState.operation.sync.syncStrategy}}`
+      Phase: `{{.app.status.operationState.phase}}`
+      Message: `{{.app.status.operationState.message}}`
+      {{end}}
+      
+      Repo: `{{.app.spec.source.repoURL}}`
+      Revision: `{{.app.status.sync.revision}}`
+      
+      View: https://argocd.health.gurko.ru/applications/{{.app.metadata.name}}

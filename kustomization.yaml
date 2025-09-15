@@ -1,8 +1,14 @@
 resources:
-  - argocd/cm/argocd-cm.yaml
+  - argocd/cm/argocd-cm-oidc.yaml
+  # - argocd/cm/argocd-cm-dex.yaml если используется DEX
   - argocd/cm/argocd-rbac-cm.yaml
   - argocd/projects/project-stage.yaml
   - argocd/projects/project-prod.yaml
   - argocd/repos/repo-gitops-apps.yaml
   - argocd/repos/repo-helm-charts.yaml
-  - ingress/argocd.ingress.yaml
+  - argocd/ingress/argocd.ingress.yaml
+  - argocd/notifications/cm.yaml
+  - argocd/notifications/triggers.yaml
+  - argocd/notifications/templates.yaml
+  - argocd/notifications/subscriptions.yaml
+  - argocd/notifications/secret.yaml
