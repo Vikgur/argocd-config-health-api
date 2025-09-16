@@ -1,17 +1,26 @@
 repos:
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.32.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
-        name: YAML Lint
         files: \.(yaml|yml)$
 
-  - repo: https://github.com/helm/chart-testing
-    rev: v3.9.0
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
     hooks:
-      - id: ct-lint
-        name: Kubernetes Manifest Lint
-        entry: ct lint --check-version-increment=false
-        language: system
-        types: [yaml]
-        pass_filenames: false
+      - id: gitleaks
+        args: ["--config=.gitleaks.toml"]
+
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: 3.2.276
+    hooks:
+      - id: checkov
+        args: ["--framework", "kubernetes", "--config-file", ".checkov.yaml"]
+        files: \.(yaml|yml)$
+
+  - repo: https://github.com/open-policy-agent/conftest
+    rev: v0.52.0
+    hooks:
+      - id: conftest
+        args: ["--policy", "policy/argo"]
+        files: \.(yaml|yml)$
